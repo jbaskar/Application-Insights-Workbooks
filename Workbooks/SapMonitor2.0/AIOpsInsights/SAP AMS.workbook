@@ -160,8 +160,7 @@
                   },
                   "defaultValue": "value::1",
                   "queryType": 0,
-                  "resourceType": "microsoft.operationalinsights/workspaces",
-                  "value": "true"
+                  "resourceType": "microsoft.operationalinsights/workspaces"
                 }
               ],
               "style": "pills",
@@ -303,6 +302,10 @@
               "additionalResourceOptions": [],
               "showDefault": false
             },
+            "timeContext": {
+              "durationMs": 0
+            },
+            "timeContextFromParameter": "timePeriod",
             "queryType": 0,
             "resourceType": "microsoft.operationalinsights/workspaces"
           },
@@ -433,7 +436,7 @@
               "additionalResourceOptions": [],
               "showDefault": false
             },
-            "jsonData": "[\"Availability\"]",
+            "jsonData": "[\"Availability\",\"Performance\"]",
             "value": "Availability"
           }
         ],
@@ -491,7 +494,7 @@
                     ],
                     "showDefault": false
                   },
-                  "jsonData": "[\"sapnetweaver-response-time\", \"sapnetweaver-batch-job-jobname\", \"sapnetweaver-cpu-user-utilization\",\"sapnetweaver-cpu-system-utilization\",\"sapnetweaver-memory-utilization\",\"sapnetweaver-instance-queue-wait\",\"sapnetweaver-instance-work-process-utilization\"]",
+                  "jsonData": "[\"sapnetweaver-processing-anomaly\", \"sapnetweaver-dynamic-thresholding\", \"sapnetweaver-response-time\", \"sapnetweaver-batch-job-jobname\", \"sapnetweaver-cpu-user-utilization\",\"sapnetweaver-cpu-system-utilization\",\"sapnetweaver-memory-utilization\",\"sapnetweaver-instance-queue-wait\",\"sapnetweaver-instance-work-process-utilization\"]",
                   "defaultValue": "value::all"
                 },
                 {
@@ -1530,6 +1533,1133 @@
       ],
       "customWidth": "55",
       "name": "availability"
+    },
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "6437ca9b-71f1-46a0-a7f3-702f84abdca3",
+            "version": "KqlParameterItem/1.0",
+            "name": "anomalyDetection",
+            "label": "View Mode",
+            "type": 10,
+            "isRequired": true,
+            "isHiddenWhenLocked": true,
+            "typeSettings": {
+              "additionalResourceOptions": [],
+              "showDefault": false
+            },
+            "jsonData": "[\"Basic\",\"Advanced\"]",
+            "timeContext": {
+              "durationMs": 86400000
+            },
+            "value": "Basic"
+          }
+        ],
+        "style": "above",
+        "queryType": 0,
+        "resourceType": "microsoft.workloads/monitors"
+      },
+      "conditionalVisibility": {
+        "parameterName": "selTab",
+        "comparison": "isEqualTo",
+        "value": "Performance"
+      },
+      "name": "perfToggle"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "title": "💡Selecting an alert filters these insights to a 1-hour window around the selected alert",
+        "items": [
+          {
+            "type": 12,
+            "content": {
+              "version": "NotebookGroup/1.0",
+              "groupType": "editable",
+              "items": [
+                {
+                  "type": 1,
+                  "content": {
+                    "json": "### Contextual Insights for {selSID}"
+                  },
+                  "name": "text - 3"
+                },
+                {
+                  "type": 9,
+                  "content": {
+                    "version": "KqlParameterItem/1.0",
+                    "crossComponentResources": [
+                      "{workspace}"
+                    ],
+                    "parameters": [
+                      {
+                        "id": "db5125db-9c4b-4ebd-ac46-2406d5c7588e",
+                        "version": "KqlParameterItem/1.0",
+                        "name": "issueType",
+                        "label": "Issue Type",
+                        "type": 2,
+                        "isRequired": true,
+                        "typeSettings": {
+                          "additionalResourceOptions": [],
+                          "showDefault": false
+                        },
+                        "jsonData": "[\"High Response Time\", \"Long Batch Jobs\"]",
+                        "value": "High Response Time"
+                      },
+                      {
+                        "id": "521b8a72-31d7-424b-acf1-2e2b276dcce8",
+                        "version": "KqlParameterItem/1.0",
+                        "name": "sapTask",
+                        "label": "Task",
+                        "type": 2,
+                        "isRequired": true,
+                        "multiSelect": true,
+                        "quote": "",
+                        "delimiter": ",",
+                        "query": "let endTime=todatetime(\"{endTime}\");\r\nlet startTime=todatetime(\"{startTime}\");\r\n\r\nSapNetweaver_SWNC_CL \r\n| where TimeGenerated between (startTime .. endTime)\r\n| mv-apply element=split(\"{selSID}\",\",\") to typeof(string) on \r\n(\r\n   top 1 by element\r\n)\r\n| where element==SID_s and \"{providerInstance}\" contains PROVIDER_INSTANCE_s and (\"{issueType}\"!=\"Long Batch Jobs\" or Task_Type_Name_s==\"BCKGRD\")\r\n| distinct Task_Type_Name_s",
+                        "crossComponentResources": [
+                          "{workspace}"
+                        ],
+                        "typeSettings": {
+                          "additionalResourceOptions": [
+                            "value::all"
+                          ],
+                          "showDefault": false
+                        },
+                        "defaultValue": "value::all",
+                        "queryType": 0,
+                        "resourceType": "microsoft.operationalinsights/workspaces"
+                      }
+                    ],
+                    "style": "above",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces"
+                  },
+                  "customWidth": "80",
+                  "name": "contextFilters"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "let endTime=todatetime(\"{endTime}\");\r\nlet startTime=todatetime(\"{startTime}\");\r\nlet binSize=tolong(\"{minutesBin}\");\r\n\r\nSapNetweaver_SWNC_CL \r\n| where TimeGenerated between (startTime .. endTime) and SID_s==\"{selSID}\" and \"{providerInstance}\" contains PROVIDER_INSTANCE_s\r\n| mv-apply task=split(\"{sapTask}\",\",\") to typeof(string) on \r\n(\r\n   project task\r\n)\r\n| where task==Task_Type_Name_s\r\n| summarize ResponseTime = avg(Total_Response_Time_d / Total_Steps_d),\r\n    DBTime = avg(Total_DB_Time_d / Total_Steps_d),\r\n    RollWaitTime = avg(Total_Roll_Wait_Time_d / Total_Steps_d),\r\n    WaitTime = avg(Total_Queue_Time_d / Total_Steps_d),\r\n    ProcessingTime = avg(Total_Processing_Time_d / Total_Steps_d),\r\n    GUITime = avg(Total_GUI_Time_d / Total_Steps_d),\r\n    CPUTime = avg(Total_CPU_Time_d / Total_Steps_d) by bin(TimeGenerated, iff(binSize<60, 1m, binSize*1m))\r\n| sort by ResponseTime desc",
+                    "size": 0,
+                    "aggregation": 3,
+                    "title": "Top Time Taking Requests (ST03)",
+                    "timeBrushParameterName": "brushedTimePeriod",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{workspace}"
+                    ],
+                    "visualization": "timechart",
+                    "gridSettings": {
+                      "formatters": [
+                        {
+                          "columnMatch": "SID_s",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "ResponseTime",
+                          "formatter": 8,
+                          "formatOptions": {
+                            "palette": "greenRed",
+                            "linkTarget": "GenericDetails",
+                            "linkIsContextBlade": true
+                          },
+                          "numberFormat": {
+                            "unit": 23,
+                            "options": {
+                              "style": "decimal",
+                              "maximumFractionDigits": 2
+                            }
+                          },
+                          "tooltipFormat": {
+                            "tooltip": "Click to see more information on the response time."
+                          }
+                        },
+                        {
+                          "columnMatch": "DBTime",
+                          "formatter": 5,
+                          "numberFormat": {
+                            "unit": 23,
+                            "options": {
+                              "style": "decimal",
+                              "maximumFractionDigits": 2
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "RollWaitTime",
+                          "formatter": 5,
+                          "numberFormat": {
+                            "unit": 23,
+                            "options": {
+                              "style": "decimal",
+                              "maximumFractionDigits": 2
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "WaitTime",
+                          "formatter": 5,
+                          "numberFormat": {
+                            "unit": 23,
+                            "options": {
+                              "style": "decimal",
+                              "maximumFractionDigits": 2
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "ProcessingTime",
+                          "formatter": 5,
+                          "numberFormat": {
+                            "unit": 23,
+                            "options": {
+                              "style": "decimal",
+                              "maximumFractionDigits": 2
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "GUITime",
+                          "formatter": 5,
+                          "numberFormat": {
+                            "unit": 23,
+                            "options": {
+                              "style": "decimal",
+                              "maximumFractionDigits": 2
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "CPUTime",
+                          "formatter": 5,
+                          "numberFormat": {
+                            "unit": 23,
+                            "options": {
+                              "style": "decimal",
+                              "maximumFractionDigits": 2
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "DB_time",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "Processing_time",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "GUI_Time",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "Wait_time",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "Task",
+                          "formatter": 5
+                        }
+                      ],
+                      "labelSettings": [
+                        {
+                          "columnId": "SID_s",
+                          "label": "SAP System"
+                        },
+                        {
+                          "columnId": "ResponseTime",
+                          "label": "Response Time"
+                        }
+                      ]
+                    },
+                    "chartSettings": {
+                      "xAxis": "TimeGenerated",
+                      "yAxis": [
+                        "ResponseTime"
+                      ],
+                      "seriesLabelSettings": [
+                        {
+                          "seriesName": "ResponseTime",
+                          "label": "Response Time"
+                        }
+                      ],
+                      "ySettings": {
+                        "numberFormatSettings": {
+                          "unit": 23,
+                          "options": {
+                            "style": "decimal",
+                            "useGrouping": true,
+                            "maximumFractionDigits": 2
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "customWidth": "50",
+                  "name": "contextualPlotParentNew"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "let endTime=todatetime(\"{brushedTimePeriod:endISO}\");\r\nlet startTime=todatetime(\"{brushedTimePeriod:startISO}\");\r\nlet timeDiff=datetime_diff(\"minute\", endTime, startTime);\r\nlet binSize=tolong(\"{minutesBin}\");\r\nlet finalBinSize=iff(timeDiff >= binSize, binSize, timeDiff);\r\n\r\nSapNetweaver_SWNC_CL \r\n| where TimeGenerated between (startTime .. endTime) and SID_s==\"{selSID}\" and \"{providerInstance}\" contains PROVIDER_INSTANCE_s\r\n| mv-apply task=split(\"{sapTask}\",\",\") to typeof(string) on \r\n(\r\n   project task\r\n)\r\n| where task==Task_Type_Name_s\r\n| summarize ResponseTime = avg(Total_Response_Time_d / Total_Steps_d),\r\n    DBTime = avg(Total_DB_Time_d / Total_Steps_d),\r\n    RollWaitTime = avg(Total_Roll_Wait_Time_d / Total_Steps_d),\r\n    WaitTime = avg(Total_Queue_Time_d / Total_Steps_d),\r\n    ProcessingTime = avg(Total_Processing_Time_d / Total_Steps_d),\r\n    GUITime = avg(Total_GUI_Time_d / Total_Steps_d),\r\n    CPUTime = avg(Total_CPU_Time_d / Total_Steps_d) by SID_s, bin(TimeGenerated, iff(binSize<60, 1m, finalBinSize*1m))\r\n| sort by ResponseTime desc",
+                    "size": 0,
+                    "title": "💡Click on the response time to view its constituents",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{workspace}"
+                    ],
+                    "gridSettings": {
+                      "formatters": [
+                        {
+                          "columnMatch": "SID_s",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "ResponseTime",
+                          "formatter": 8,
+                          "formatOptions": {
+                            "palette": "greenRed",
+                            "linkTarget": "GenericDetails",
+                            "linkIsContextBlade": true
+                          },
+                          "numberFormat": {
+                            "unit": 23,
+                            "options": {
+                              "style": "decimal",
+                              "maximumFractionDigits": 2
+                            }
+                          },
+                          "tooltipFormat": {
+                            "tooltip": "Click to see more information on the response time."
+                          }
+                        },
+                        {
+                          "columnMatch": "DBTime",
+                          "formatter": 5,
+                          "numberFormat": {
+                            "unit": 23,
+                            "options": {
+                              "style": "decimal",
+                              "maximumFractionDigits": 2
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "RollWaitTime",
+                          "formatter": 5,
+                          "numberFormat": {
+                            "unit": 23,
+                            "options": {
+                              "style": "decimal",
+                              "maximumFractionDigits": 2
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "WaitTime",
+                          "formatter": 5,
+                          "numberFormat": {
+                            "unit": 23,
+                            "options": {
+                              "style": "decimal",
+                              "maximumFractionDigits": 2
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "ProcessingTime",
+                          "formatter": 5,
+                          "numberFormat": {
+                            "unit": 23,
+                            "options": {
+                              "style": "decimal",
+                              "maximumFractionDigits": 2
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "GUITime",
+                          "formatter": 5,
+                          "numberFormat": {
+                            "unit": 23,
+                            "options": {
+                              "style": "decimal",
+                              "maximumFractionDigits": 2
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "CPUTime",
+                          "formatter": 5,
+                          "numberFormat": {
+                            "unit": 23,
+                            "options": {
+                              "style": "decimal",
+                              "maximumFractionDigits": 2
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "DB_time",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "Processing_time",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "GUI_Time",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "Wait_time",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "Task",
+                          "formatter": 5
+                        }
+                      ],
+                      "labelSettings": [
+                        {
+                          "columnId": "SID_s",
+                          "label": "SAP System"
+                        },
+                        {
+                          "columnId": "ResponseTime",
+                          "label": "Response Time"
+                        }
+                      ]
+                    }
+                  },
+                  "customWidth": "50",
+                  "conditionalVisibility": {
+                    "parameterName": "brushedTimePeriod",
+                    "comparison": "isNotEqualTo"
+                  },
+                  "name": "contextualPlotParent"
+                }
+              ],
+              "exportParameters": true
+            },
+            "name": "perfResponse"
+          },
+          {
+            "type": 12,
+            "content": {
+              "version": "NotebookGroup/1.0",
+              "groupType": "editable",
+              "items": [
+                {
+                  "type": 1,
+                  "content": {
+                    "json": "#### Application metrics for {selSID}"
+                  },
+                  "name": "text - 5 - Copy"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "let startTime=todatetime(\"{brushedTimePeriod:startISO}\");\r\nlet endTime=todatetime(\"{brushedTimePeriod:endISO}\");\r\nlet dateDiff = tolong(datetime_diff('minute', endTime, startTime));\r\nlet numParts = iff(dateDiff <= 4000, iff(dateDiff<10, iff(dateDiff==0, 1, dateDiff), dateDiff/5), tolong(4000));\r\nlet binSize = iff(dateDiff <= 4000, iff(dateDiff<10, dateDiff, 5), dateDiff/4000);\r\n\r\nSapNetweaver_SWNC_CL\r\n| where serverTimestamp_t between (startTime .. endTime) and \"{providerInstance}\" contains PROVIDER_INSTANCE_s\r\n| where SID_s == \"{selSID}\"\r\n| mv-apply task=split(\"{sapTask}\",\",\") to typeof(string) on \r\n(\r\n   project task\r\n)\r\n| where task==Task_Type_Name_s\r\n| extend DatabaseCalls =  ST03_Avg_DB_Dir_Time_d + ST03_Avg_DB_Seq_Time_d + ST03_Avg_DB_Change_Time_d  \r\n| summarize DatabaseCalls=avg(DatabaseCalls) by bin(serverTimestamp_t, binSize * 1m), Task_Type_Name_s ",
+                    "size": 1,
+                    "aggregation": 3,
+                    "title": "Database Calls",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{workspace}"
+                    ],
+                    "visualization": "timechart",
+                    "chartSettings": {
+                      "xAxis": "serverTimestamp_t",
+                      "yAxis": [
+                        "DatabaseCalls"
+                      ],
+                      "group": "Task_Type_Name_s",
+                      "createOtherGroup": null,
+                      "ySettings": {
+                        "numberFormatSettings": {
+                          "unit": 23,
+                          "options": {
+                            "style": "decimal",
+                            "useGrouping": true,
+                            "maximumFractionDigits": 2
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "customWidth": "50",
+                  "conditionalVisibility": {
+                    "parameterName": "issueType",
+                    "comparison": "isEqualTo",
+                    "value": "High Response Time"
+                  },
+                  "name": "databaseCalls"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "let startTime=todatetime(\"{brushedTimePeriod:startISO}\");\r\nlet endTime=todatetime(\"{brushedTimePeriod:endISO}\");\r\nlet dateDiff = tolong(datetime_diff('minute', endTime, startTime));\r\nlet numParts = iff(dateDiff <= 4000, iff(dateDiff<10, iff(dateDiff==0, 1, dateDiff), dateDiff/5), tolong(4000));\r\nlet binSize = iff(dateDiff <= 4000, iff(dateDiff<10, dateDiff, 5), dateDiff/4000);\r\n\r\nSapNetweaver_SWNC_CL\r\n| where serverTimestamp_t between (startTime .. endTime) and \"{providerInstance}\" contains PROVIDER_INSTANCE_s\r\n| where SID_s == \"{selSID}\"\r\n| mv-apply task=split(\"{sapTask}\",\",\") to typeof(string) on \r\n(\r\n   project task\r\n)\r\n| where task==Task_Type_Name_s\r\n| project serverTimestamp_t, Task_Type_Name_s, Total_DB_Time_d, Total_Steps_d\r\n| summarize Total_DB_Time_d=avg(Total_DB_Time_d/Total_Steps_d) by bin(serverTimestamp_t, binSize * 1m), Task_Type_Name_s",
+                    "size": 1,
+                    "aggregation": 3,
+                    "title": "Avg. Time per DB Call",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{workspace}"
+                    ],
+                    "visualization": "timechart",
+                    "chartSettings": {
+                      "xAxis": "serverTimestamp_t",
+                      "yAxis": [
+                        "Total_DB_Time_d"
+                      ],
+                      "group": "Task_Type_Name_s",
+                      "createOtherGroup": null,
+                      "ySettings": {
+                        "numberFormatSettings": {
+                          "unit": 23,
+                          "options": {
+                            "style": "decimal",
+                            "useGrouping": true,
+                            "maximumFractionDigits": 2
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "customWidth": "50",
+                  "conditionalVisibility": {
+                    "parameterName": "issueType",
+                    "comparison": "isEqualTo",
+                    "value": "High Response Time"
+                  },
+                  "name": "averageTimePerDB"
+                },
+                {
+                  "type": 12,
+                  "content": {
+                    "version": "NotebookGroup/1.0",
+                    "groupType": "editable",
+                    "title": "Work Process Utilization",
+                    "items": [
+                      {
+                        "type": 9,
+                        "content": {
+                          "version": "KqlParameterItem/1.0",
+                          "crossComponentResources": [
+                            "{workspace}"
+                          ],
+                          "parameters": [
+                            {
+                              "id": "84815031-6c33-49ee-9c1e-d0d840e70c17",
+                              "version": "KqlParameterItem/1.0",
+                              "name": "wpType",
+                              "label": "Work Process Type",
+                              "type": 2,
+                              "multiSelect": true,
+                              "quote": "",
+                              "delimiter": ",",
+                              "query": "let startTime=todatetime(\"{brushedTimePeriod:startISO}\");\r\nlet endTime=todatetime(\"{brushedTimePeriod:endISO}\");\r\n\r\nSapNetweaver_ABAPGetWPTable_CL\r\n| where serverTimestamp_t between (startTime .. endTime) and \"{providerInstance}\" contains PROVIDER_INSTANCE_s\r\n| where SID_s == \"{selSID}\"\r\n| distinct Typ_s",
+                              "crossComponentResources": [
+                                "{workspace}"
+                              ],
+                              "typeSettings": {
+                                "additionalResourceOptions": [
+                                  "value::all"
+                                ],
+                                "showDefault": false
+                              },
+                              "defaultValue": "value::all",
+                              "queryType": 0,
+                              "resourceType": "microsoft.operationalinsights/workspaces"
+                            }
+                          ],
+                          "style": "above",
+                          "queryType": 0,
+                          "resourceType": "microsoft.operationalinsights/workspaces"
+                        },
+                        "name": "wpFilters"
+                      },
+                      {
+                        "type": 3,
+                        "content": {
+                          "version": "KqlItem/1.0",
+                          "query": "let startTime=todatetime(\"{brushedTimePeriod:startISO}\");\r\nlet endTime=todatetime(\"{brushedTimePeriod:endISO}\");\r\nlet dateDiff = tolong(datetime_diff('minute', endTime, startTime));\r\nlet numParts = iff(dateDiff <= 4000, iff(dateDiff<10, iff(dateDiff==0, 1, dateDiff), dateDiff/5), tolong(4000));\r\nlet binSize = iff(dateDiff <= 4000, iff(dateDiff<10, dateDiff, 5), dateDiff/4000);\r\n\r\nSapNetweaver_ABAPGetWPTable_CL\r\n| where serverTimestamp_t between (startTime .. endTime) and \"{providerInstance}\" contains PROVIDER_INSTANCE_s\r\n| where SID_s == \"{selSID}\"\r\n| mv-apply task=split(\"{wpType}\",\",\") to typeof(string) on \r\n(\r\n   project task\r\n)\r\n| where task==Typ_s\r\n| summarize totalWP = count(), freeWP = countif(Status_s == \"Wait\") by bin(serverTimestamp_t, binSize * 1m)\r\n| extend activeWP = totalWP - freeWP",
+                          "size": 1,
+                          "aggregation": 3,
+                          "queryType": 0,
+                          "resourceType": "microsoft.operationalinsights/workspaces",
+                          "crossComponentResources": [
+                            "{workspace}"
+                          ],
+                          "visualization": "areachart",
+                          "chartSettings": {
+                            "xAxis": "serverTimestamp_t",
+                            "yAxis": [
+                              "freeWP",
+                              "activeWP"
+                            ],
+                            "group": null,
+                            "createOtherGroup": 0,
+                            "seriesLabelSettings": [
+                              {
+                                "seriesName": "freeWP",
+                                "label": "Free Work Processes"
+                              },
+                              {
+                                "seriesName": "activeWP",
+                                "label": "Active Work Processes"
+                              }
+                            ]
+                          }
+                        },
+                        "conditionalVisibility": {
+                          "parameterName": "issueType",
+                          "comparison": "isEqualTo",
+                          "value": "High Response Time"
+                        },
+                        "name": "workProcessUtil"
+                      }
+                    ]
+                  },
+                  "customWidth": "50",
+                  "conditionalVisibility": {
+                    "parameterName": "issueType",
+                    "comparison": "isEqualTo",
+                    "value": "High Response Time"
+                  },
+                  "name": "wpUtilGroup"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "let startTime=todatetime(\"{brushedTimePeriod:startISO}\");\r\nlet endTime=todatetime(\"{brushedTimePeriod:endISO}\");\r\nlet dateDiff = tolong(datetime_diff('minute', endTime, startTime));\r\nlet numParts = iff(dateDiff <= 4000, iff(dateDiff<10, iff(dateDiff==0, 1, dateDiff), dateDiff/5), tolong(4000));\r\nlet binSize = iff(dateDiff <= 4000, iff(dateDiff<10, dateDiff, 5), dateDiff/4000);\r\n\r\nSapNetweaver_EnqueueRead_CL\r\n| where serverTimestamp_t between (startTime .. endTime) and  SID_s == \"{selSID}\" and \"{providerInstance}\" contains PROVIDER_INSTANCE_s\r\n| extend GTCODE = column_ifexists(\"GTCODE_s\", \"\")\r\n| extend GBCKTYPE = column_ifexists(\"GBCKTYPE_s\", \"\")\r\n| summarize GNAME = dcount(GNAME_s) by GNAME_s, GMODE_s, GOBJ_s, GUNAME_s, GTWP_s, hostname_s, serverTimestamp_t\r\n| summarize locks = count() by GOBJ_s, GNAME_s, GUNAME_s, hostname_s",
+                    "size": 3,
+                    "title": "Lock Entries (SM12)",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces",
+                    "crossComponentResources": [
+                      "{workspace}"
+                    ],
+                    "visualization": "tiles",
+                    "tileSettings": {
+                      "titleContent": {
+                        "columnMatch": "GOBJ_s",
+                        "formatter": 1
+                      },
+                      "subtitleContent": {
+                        "columnMatch": "GNAME_s",
+                        "formatter": 1
+                      },
+                      "leftContent": {
+                        "columnMatch": "locks",
+                        "formatter": 12,
+                        "formatOptions": {
+                          "palette": "auto"
+                        },
+                        "numberFormat": {
+                          "unit": 17,
+                          "options": {
+                            "maximumSignificantDigits": 3,
+                            "maximumFractionDigits": 2
+                          }
+                        }
+                      },
+                      "rightContent": {
+                        "columnMatch": "GUNAME_s",
+                        "formatter": 1
+                      },
+                      "secondaryContent": {
+                        "columnMatch": "hostname_s"
+                      },
+                      "showBorder": false,
+                      "size": "auto"
+                    }
+                  },
+                  "customWidth": "50",
+                  "conditionalVisibility": {
+                    "parameterName": "issueType",
+                    "comparison": "isEqualTo",
+                    "value": "High Response Time"
+                  },
+                  "name": "lockEntries"
+                },
+                {
+                  "type": 12,
+                  "content": {
+                    "version": "NotebookGroup/1.0",
+                    "groupType": "editable",
+                    "title": "Batch Jobs (SM37)",
+                    "items": [
+                      {
+                        "type": 3,
+                        "content": {
+                          "version": "KqlItem/1.0",
+                          "query": "let startTime=todatetime(\"{brushedTimePeriod:startISO}\");\r\nlet endTime=todatetime(\"{brushedTimePeriod:endISO}\");\r\nlet dateDiff = tolong(datetime_diff('minute', endTime, startTime));\r\nlet numParts = iff(dateDiff <= 4000, iff(dateDiff<10, iff(dateDiff==0, 1, dateDiff), dateDiff/5), tolong(4000));\r\nlet binSize = iff(dateDiff <= 4000, iff(dateDiff<10, dateDiff, 5), dateDiff/4000);\r\n\r\nlet batches = SapNetweaver_BatchJobs_CL\r\n| where serverTimestamp_t between (startTime .. endTime) and SID_s == \"{selSID}\" and \"{providerInstance}\" contains PROVIDER_INSTANCE_s\r\n| extend planneddatetime =  todatetime(strcat(SDLSTRTDT_s, SDLSTRTTM_s))\r\n| extend startdatetime =  todatetime(strcat(STRTDATE_s, STRTTIME_s))\r\n| extend enddatetime =  todatetime(strcat(ENDDATE_s, ENDTIME_s))\r\n| extend Status = case( STATUS_s == 'F', 'Finished',\r\n                        STATUS_s == 'S', 'Released',\r\n                        STATUS_s == 'P', 'Scheduled',\r\n                        STATUS_s == 'A', 'Cancelled',\r\n                        STATUS_s == 'Z', 'Active',\r\n                        STATUS_s == 'Y', 'Ready', '')    \r\n| distinct Status, JOBNAME_s, JOBCLASS_s, PERIODIC_s, planneddatetime, startdatetime, enddatetime, hostname_s;\r\n\r\nunion (\r\n    batches\r\n    | where Status==\"Active\"\r\n    | summarize Value=count() by hostname_s\r\n    | extend Category=\"Active Jobs\"\r\n), \r\n(\r\n    batches\r\n    | summarize Value=countif(datetime_diff(\"minute\", enddatetime, startdatetime) > 30) by hostname_s\r\n    | extend Category=\"Runtime > 30 Minutes\"\r\n), \r\n(\r\n    batches\r\n    | where Status != 'Scheduled' and Status != 'Released' and Status != 'Ready'\r\n    | summarize Value=countif(startdatetime > planneddatetime) by hostname_s\r\n    | extend Category=\"Jobs With Delayed Start\"\r\n)\r\n| order by Category, hostname_s",
+                          "size": 3,
+                          "exportFieldName": "Category",
+                          "exportParameterName": "batchCategory",
+                          "queryType": 0,
+                          "resourceType": "microsoft.operationalinsights/workspaces",
+                          "crossComponentResources": [
+                            "{workspace}"
+                          ],
+                          "visualization": "tiles",
+                          "tileSettings": {
+                            "titleContent": {
+                              "columnMatch": "Category",
+                              "formatter": 1
+                            },
+                            "leftContent": {
+                              "columnMatch": "Value",
+                              "formatter": 12,
+                              "formatOptions": {
+                                "palette": "auto"
+                              },
+                              "numberFormat": {
+                                "unit": 17,
+                                "options": {
+                                  "style": "decimal",
+                                  "maximumFractionDigits": 2,
+                                  "maximumSignificantDigits": 3
+                                }
+                              }
+                            },
+                            "secondaryContent": {
+                              "columnMatch": "hostname_s",
+                              "formatter": 1
+                            },
+                            "showBorder": false,
+                            "size": "auto"
+                          },
+                          "graphSettings": {
+                            "type": 2,
+                            "topContent": {
+                              "columnMatch": "JOBNAME_s",
+                              "formatter": 1
+                            },
+                            "centerContent": {
+                              "columnMatch": "Value",
+                              "formatter": 1,
+                              "numberFormat": {
+                                "unit": 17,
+                                "options": {
+                                  "maximumSignificantDigits": 3,
+                                  "maximumFractionDigits": 2
+                                }
+                              }
+                            },
+                            "nodeIdField": "Category",
+                            "graphOrientation": 3,
+                            "showOrientationToggles": false,
+                            "nodeSize": null,
+                            "staticNodeSize": 100,
+                            "colorSettings": null,
+                            "hivesMargin": 5
+                          },
+                          "chartSettings": {
+                            "xAxis": "startdatetime",
+                            "yAxis": [
+                              "Value"
+                            ],
+                            "group": "Category",
+                            "createOtherGroup": null
+                          }
+                        },
+                        "name": "batchJobs"
+                      },
+                      {
+                        "type": 3,
+                        "content": {
+                          "version": "KqlItem/1.0",
+                          "query": "let startTime=todatetime(\"{brushedTimePeriod:startISO}\");\r\nlet endTime=todatetime(\"{brushedTimePeriod:endISO}\");\r\nlet dateDiff = tolong(datetime_diff('minute', endTime, startTime));\r\nlet numParts = iff(dateDiff <= 4000, iff(dateDiff<10, iff(dateDiff==0, 1, dateDiff), dateDiff/5), tolong(4000));\r\nlet binSize = iff(dateDiff <= 4000, iff(dateDiff<10, dateDiff, 5), dateDiff/4000);\r\n\r\nSapNetweaver_BatchJobs_CL\r\n| where serverTimestamp_t between (startTime .. endTime) and SID_s == \"{selSID}\" and \"{providerInstance}\" contains PROVIDER_INSTANCE_s\r\n| extend planneddatetime =  todatetime(strcat(SDLSTRTDT_s, SDLSTRTTM_s))\r\n| extend startdatetime =  todatetime(strcat(STRTDATE_s, STRTTIME_s))\r\n| extend enddatetime =  todatetime(strcat(ENDDATE_s, ENDTIME_s))\r\n| extend Status = case( STATUS_s == 'F', 'Finished',\r\n                        STATUS_s == 'S', 'Released',\r\n                        STATUS_s == 'P', 'Scheduled',\r\n                        STATUS_s == 'A', 'Cancelled',\r\n                        STATUS_s == 'Z', 'Active',\r\n                        STATUS_s == 'Y', 'Ready', '')    \r\n| where (\"{batchCategory}\" =~ \"Jobs with Delayed Start\" and Status != 'Scheduled' and Status != 'Released' and Status != 'Ready' and startdatetime > planneddatetime) or (\"{batchCategory}\" =~ \"Active Jobs\" and Status == \"Active\") or (\"{batchCategory}\" =~ \"Runtime > 30 minutes\" and datetime_diff(\"minute\", enddatetime, startdatetime) > 30)\r\n| distinct Status, JOBNAME_s, JOBCLASS_s, PERIODIC_s, planneddatetime, startdatetime, enddatetime, hostname_s, LASTCHNAME_s\r\n| order by planneddatetime desc",
+                          "size": 0,
+                          "queryType": 0,
+                          "resourceType": "microsoft.operationalinsights/workspaces",
+                          "crossComponentResources": [
+                            "{workspace}"
+                          ],
+                          "gridSettings": {
+                            "formatters": [
+                              {
+                                "columnMatch": "Status",
+                                "formatter": 18,
+                                "formatOptions": {
+                                  "thresholdsOptions": "icons",
+                                  "thresholdsGrid": [
+                                    {
+                                      "operator": "==",
+                                      "thresholdValue": "Cancelled",
+                                      "representation": "cancelled",
+                                      "text": "{0}{1}"
+                                    },
+                                    {
+                                      "operator": "Default",
+                                      "thresholdValue": null,
+                                      "representation": "success",
+                                      "text": "{0}{1}"
+                                    }
+                                  ]
+                                }
+                              },
+                              {
+                                "columnMatch": "hostname_s",
+                                "formatter": 5
+                              }
+                            ],
+                            "labelSettings": [
+                              {
+                                "columnId": "JOBNAME_s",
+                                "label": "Job Name"
+                              },
+                              {
+                                "columnId": "JOBCLASS_s",
+                                "label": "Job Class"
+                              },
+                              {
+                                "columnId": "PERIODIC_s",
+                                "label": "Periodic"
+                              },
+                              {
+                                "columnId": "planneddatetime",
+                                "label": "Planned Date & Time"
+                              },
+                              {
+                                "columnId": "startdatetime",
+                                "label": "Start Date & Time"
+                              },
+                              {
+                                "columnId": "enddatetime",
+                                "label": "End Date & Time"
+                              },
+                              {
+                                "columnId": "hostname_s",
+                                "label": "VM Name"
+                              },
+                              {
+                                "columnId": "LASTCHNAME_s",
+                                "label": "User Name"
+                              }
+                            ]
+                          }
+                        },
+                        "conditionalVisibility": {
+                          "parameterName": "batchCategory",
+                          "comparison": "isNotEqualTo"
+                        },
+                        "name": "batchJobGrid"
+                      }
+                    ]
+                  },
+                  "customWidth": "100",
+                  "conditionalVisibility": {
+                    "parameterName": "issueType",
+                    "comparison": "isEqualTo",
+                    "value": "High Response Time"
+                  },
+                  "name": "runningBatchJobs"
+                }
+              ]
+            },
+            "conditionalVisibility": {
+              "parameterName": "brushedTimePeriod",
+              "comparison": "isNotEqualTo"
+            },
+            "name": "sapSystemMetrics"
+          },
+          {
+            "type": 12,
+            "content": {
+              "version": "NotebookGroup/1.0",
+              "groupType": "editable",
+              "items": [
+                {
+                  "type": 9,
+                  "content": {
+                    "version": "KqlParameterItem/1.0",
+                    "crossComponentResources": [
+                      "{workspace}"
+                    ],
+                    "parameters": [
+                      {
+                        "id": "f5e85ee4-f49d-469c-bf1d-8e20a8b80a05",
+                        "version": "KqlParameterItem/1.0",
+                        "name": "perfVMs",
+                        "type": 5,
+                        "isRequired": true,
+                        "multiSelect": true,
+                        "quote": "'",
+                        "delimiter": ",",
+                        "query": "let endTime = todatetime(\"{endTime}\");\r\nlet startTime = todatetime(\"{startTime}\");\r\n\r\nSapNetweaver_SWNC_CL\r\n| where serverTimestamp_t between (startTime .. endTime) and \"{providerInstance}\" contains PROVIDER_INSTANCE_s and SID_s==\"{selSID}\"\r\n| distinct PROVIDER_INSTANCE_s = tolower(PROVIDER_INSTANCE_s), SID_s\r\n| join kind=inner (\r\n    COMMON_VM_ArmId_Mapping_CL\r\n    | where isempty(sid_s) or sid_s==\"{selSID}\"\r\n    | distinct VM_ARM_ID_s, vm_name_s, PROVIDER_INSTANCE_s = tolower(PROVIDER_INSTANCE_s), SID_s = iff(isempty(sid_s), \"{selSID}\", sid_s)) on PROVIDER_INSTANCE_s\r\n| distinct id=VM_ARM_ID_s, label=vm_name_s\r\n",
+                        "crossComponentResources": [
+                          "{workspace}"
+                        ],
+                        "isHiddenWhenLocked": true,
+                        "typeSettings": {
+                          "additionalResourceOptions": [
+                            "value::all"
+                          ],
+                          "showDefault": false
+                        },
+                        "defaultValue": "value::all",
+                        "queryType": 0,
+                        "resourceType": "microsoft.operationalinsights/workspaces"
+                      }
+                    ],
+                    "style": "pills",
+                    "queryType": 0,
+                    "resourceType": "microsoft.operationalinsights/workspaces"
+                  },
+                  "name": "perfParams"
+                },
+                {
+                  "type": 1,
+                  "content": {
+                    "json": "#### VM metrics for {selSID}"
+                  },
+                  "name": "text - 5"
+                },
+                {
+                  "type": 10,
+                  "content": {
+                    "chartId": "workbooka84b6240-1be5-49c0-9114-5deae6272a52",
+                    "version": "MetricsItem/2.0",
+                    "size": 0,
+                    "chartType": 2,
+                    "resourceType": "microsoft.compute/virtualmachines",
+                    "metricScope": 0,
+                    "resourceParameter": "perfVMs",
+                    "resourceIds": [
+                      "{perfVMs}"
+                    ],
+                    "timeContextFromParameter": "brushedTimePeriod",
+                    "timeContext": {
+                      "durationMs": 2592000000
+                    },
+                    "metrics": [
+                      {
+                        "namespace": "microsoft.compute/virtualmachines",
+                        "metric": "microsoft.compute/virtualmachines--Percentage CPU",
+                        "aggregation": 4,
+                        "splitBy": null,
+                        "columnName": "CPU %"
+                      }
+                    ],
+                    "title": "CPU Percentage",
+                    "gridSettings": {
+                      "rowLimit": 10000
+                    }
+                  },
+                  "customWidth": "33.3",
+                  "name": "cpuPercent"
+                },
+                {
+                  "type": 10,
+                  "content": {
+                    "chartId": "workbookc095c82e-eb25-4c44-912c-beb2b32fd4ce",
+                    "version": "MetricsItem/2.0",
+                    "size": 0,
+                    "chartType": 2,
+                    "resourceType": "microsoft.compute/virtualmachines",
+                    "metricScope": 0,
+                    "resourceParameter": "perfVMs",
+                    "resourceIds": [
+                      "{perfVMs}"
+                    ],
+                    "timeContextFromParameter": "brushedTimePeriod",
+                    "timeContext": {
+                      "durationMs": 2592000000
+                    },
+                    "metrics": [
+                      {
+                        "namespace": "microsoft.compute/virtualmachines",
+                        "metric": "microsoft.compute/virtualmachines--Data Disk IOPS Consumed Percentage",
+                        "aggregation": 4,
+                        "splitBy": null
+                      }
+                    ],
+                    "title": "Data Disk IOPS Consumed Percentage",
+                    "gridSettings": {
+                      "rowLimit": 10000
+                    }
+                  },
+                  "customWidth": "33.3",
+                  "name": "diskIOPS"
+                },
+                {
+                  "type": 10,
+                  "content": {
+                    "chartId": "workbooke82baeba-4cfe-48d0-9809-d0906fabf0d8",
+                    "version": "MetricsItem/2.0",
+                    "size": 0,
+                    "chartType": 2,
+                    "resourceType": "microsoft.compute/virtualmachines",
+                    "metricScope": 0,
+                    "resourceParameter": "perfVMs",
+                    "resourceIds": [
+                      "{perfVMs}"
+                    ],
+                    "timeContextFromParameter": "brushedTimePeriod",
+                    "timeContext": {
+                      "durationMs": 2592000000
+                    },
+                    "metrics": [
+                      {
+                        "namespace": "microsoft.compute/virtualmachines",
+                        "metric": "microsoft.compute/virtualmachines--Network In Total",
+                        "aggregation": 4,
+                        "splitBy": null
+                      },
+                      {
+                        "namespace": "microsoft.compute/virtualmachines",
+                        "metric": "microsoft.compute/virtualmachines--Network Out Total",
+                        "aggregation": 4
+                      }
+                    ],
+                    "title": "Network In/Out Total",
+                    "gridSettings": {
+                      "rowLimit": 10000
+                    }
+                  },
+                  "customWidth": "33.3",
+                  "conditionalVisibility": {
+                    "parameterName": "issueType",
+                    "comparison": "isEqualTo",
+                    "value": "High Response Time"
+                  },
+                  "name": "networkInOut"
+                },
+                {
+                  "type": 10,
+                  "content": {
+                    "chartId": "workbookc095c82e-eb25-4c44-912c-beb2b32fd4ce",
+                    "version": "MetricsItem/2.0",
+                    "size": 0,
+                    "chartType": 2,
+                    "resourceType": "microsoft.compute/virtualmachines",
+                    "metricScope": 0,
+                    "resourceParameter": "perfVMs",
+                    "resourceIds": [
+                      "{perfVMs}"
+                    ],
+                    "timeContextFromParameter": "brushedTimePeriod",
+                    "timeContext": {
+                      "durationMs": 2592000000
+                    },
+                    "metrics": [
+                      {
+                        "namespace": "microsoft.compute/virtualmachines",
+                        "metric": "microsoft.compute/virtualmachines--Available Memory Bytes",
+                        "aggregation": 4,
+                        "splitBy": null
+                      }
+                    ],
+                    "title": "Available Memory",
+                    "gridSettings": {
+                      "rowLimit": 10000
+                    }
+                  },
+                  "customWidth": "33.3",
+                  "conditionalVisibility": {
+                    "parameterName": "issueType",
+                    "comparison": "isEqualTo",
+                    "value": "Long Batch Jobs"
+                  },
+                  "name": "availableMemory"
+                },
+                {
+                  "type": 1,
+                  "content": {
+                    "json": "### Configuration Drifts for {selSID}"
+                  },
+                  "name": "configDriftTitle"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "advisorresources\r\n| where type == 'microsoft.advisor/recommendations'and properties['recommendationTypeId'] in (\"fad6ef33-8ee0-4b11-b6b9-27c927a6d06d\", \"a742dd2f-a022-45a2-8948-6741b460c461\", \"7f921999-e9e3-4193-8b77-10382beb4dc9\", \"b081afb7-0106-4b69-8bc6-9f9ea1e57728\")\r\n| project SID=tostring(split(properties['resourceMetadata']['resourceId'],'/',8)[0]), VM=split(tostring(properties['extendedProperties']['VMsAffected']),\",\"), recommendationTypeId=tostring(properties['recommendationTypeId']), solution=tostring(properties['shortDescription']['solution'])\r\n| where SID==\"{selSID}\"\r\n| mv-expand VM to typeof(string)\r\n| where isnotempty(VM) and \"{perfVMs}\" contains VM\r\n| distinct VM, solution",
+                    "size": 1,
+                    "noDataMessage": "No configuration drifts logged in the given time period.",
+                    "noDataMessageStyle": 3,
+                    "queryType": 1,
+                    "resourceType": "microsoft.resourcegraph/resources",
+                    "crossComponentResources": [
+                      "{subscription}"
+                    ],
+                    "gridSettings": {
+                      "formatters": [
+                        {
+                          "columnMatch": "SID",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "VM",
+                          "formatter": 1
+                        },
+                        {
+                          "columnMatch": "recommendationTypeId",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "solution",
+                          "formatter": 1
+                        }
+                      ],
+                      "labelSettings": [
+                        {
+                          "columnId": "VM",
+                          "label": "VM Name"
+                        },
+                        {
+                          "columnId": "solution",
+                          "label": "Recommended Action"
+                        }
+                      ]
+                    }
+                  },
+                  "customWidth": "70",
+                  "name": "configDrifts"
+                }
+              ]
+            },
+            "conditionalVisibility": {
+              "parameterName": "brushedTimePeriod",
+              "comparison": "isNotEqualTo"
+            },
+            "name": "perfmetrics"
+          }
+        ]
+      },
+      "conditionalVisibilities": [
+        {
+          "parameterName": "selTab",
+          "comparison": "isEqualTo",
+          "value": "Performance"
+        },
+        {
+          "parameterName": "anomalyDetection",
+          "comparison": "isEqualTo",
+          "value": "Basic"
+        }
+      ],
+      "name": "performance"
     }
   ],
   "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
