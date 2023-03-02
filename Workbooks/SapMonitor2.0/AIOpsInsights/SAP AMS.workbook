@@ -399,7 +399,7 @@
             "content": {
               "version": "KqlParameterItem/1.0",
               "crossComponentResources": [
-                "{workspace}"
+                "/subscriptions/ade68fe0-eb3e-4178-ab09-c5f06f7fb575/resourceGroups/AIOpsWorkloads-TS1/providers/Microsoft.Workloads/monitors/ams-N04"
               ],
               "parameters": [
                 {
@@ -430,7 +430,7 @@
                     "additionalResourceOptions": [],
                     "showDefault": false
                   },
-                  "jsonData": "[\"Availability\"]",
+                  "jsonData": "[\"Availability\", \"Performance\"]",
                   "value": "Availability"
                 },
                 {
@@ -514,10 +514,7 @@
                           "showDefault": false
                         },
                         "jsonData": "[\"sapnetweaver-system-availability\", \"sapnetweaver-instance-availability\", \"sapnetweaver-enqueue-server\",\"sapnetweaver-enqueue-replicator-server\",\"saphana-availability-reponse\",\"saphana-availability-reponse-services\"]",
-                        "defaultValue": "value::all",
-                        "value": [
-                          "value::all"
-                        ]
+                        "defaultValue": "value::all"
                       },
                       {
                         "id": "2da6ac7d-f135-4bce-b91a-41e09ea891ea",
@@ -555,7 +552,6 @@
                     "json": "No alerts found in this time range or no alert rules have been configured for this monitoring profile.",
                     "style": "info"
                   },
-                  "customWidth": "100",
                   "conditionalVisibility": {
                     "parameterName": "alertsOptsData",
                     "comparison": "isEqualTo",
@@ -733,7 +729,7 @@
                   "type": 3,
                   "content": {
                     "version": "KqlItem/1.0",
-                    "query": "AlertsManagementResources\r\n| where type =~ 'microsoft.alertsmanagement/alerts'\r\n| extend StartTime = todatetime(properties.essentials.startDateTime)\r\n| where StartTime between (todatetime(\"{timePeriod:startISO}\") .. todatetime(\"{timePeriod:endISO}\"))\r\n| extend State=tostring(properties.essentials.alertState)\r\n| extend AlertRule=tolower(tostring(properties.essentials.alertRule))\r\n| extend Severity=tostring(properties.essentials.severity)\r\n| extend MonitorCondition=tostring(properties.essentials.monitorCondition)\r\n| where \"{alertSeverity}\" contains Severity and \"{alertState}\" contains State\r\n| join kind=inner (Resources \r\n    | where type =~ 'microsoft.insights/scheduledQueryRules'\r\n    | extend workspace = tostring(properties.scopes[0])\r\n\t| extend pInstance=tags.['profile-id'], templateId=tags.['alert-template-id']\r\n    | where workspace =~ '{workspace}' and ((\"{selTab}\"==\"Availability\" and \"{availabilityAlertTemplates}\" contains templateId) or (\"{selTab}\"!=\"Availability\" and \"{performanceAlertTemplates}\" contains templateId)) and (\"{providerInstance}\") contains pInstance \r\n    | project AlertRule=tolower(id), Description=properties.description, pInstance) on AlertRule\r\n| order by Severity asc, State, StartTime\r\n| project StartTime, Name=name, Severity, State, id, AlertInfo=\"Alert Details\"",
+                    "query": "AlertsManagementResources\r\n| where type =~ 'microsoft.alertsmanagement/alerts'\r\n| extend StartTime = todatetime(properties.essentials.startDateTime)\r\n| where StartTime between (todatetime(\"{timePeriod:startISO}\") .. todatetime(\"{timePeriod:endISO}\"))\r\n| extend State=tostring(properties.essentials.alertState)\r\n| extend AlertRule=tolower(tostring(properties.essentials.alertRule))\r\n| extend Severity=tostring(properties.essentials.severity)\r\n| extend MonitorCondition=tostring(properties.essentials.monitorCondition)\r\n| where \"{alertSeverity}\" contains Severity and \"{alertState}\" contains State\r\n| join kind=inner (Resources \r\n    | where type =~ 'microsoft.insights/scheduledQueryRules'\r\n    | extend workspace = tostring(properties.scopes[0])\r\n\t| extend pInstance=tags.['profile-id'], templateId=tags.['alert-template-id']\r\n    | where workspace =~ '{workspace}' and ((\"{selTab}\"==\"Availability\" and \"{availabilityAlertTemplates}\" contains templateId) or (\"{selTab}\"!=\"Availability\" and \"{performanceAlertTemplates}\" contains templateId)) and (\"{providerInstance}\") contains pInstance \r\n    | project AlertRule=tolower(id), Description=properties.description, pInstance, templateId) on AlertRule\r\n| order by Severity asc, State, StartTime\r\n| project StartTime, Name=name, Severity, State, id, AlertInfo=\"Alert Details\", templateId",
                     "size": 0,
                     "noDataMessage": "No alerts found in this time range or no alert rules have been configured for this monitoring profile.",
                     "exportedParameters": [
@@ -743,8 +739,8 @@
                         "defaultValue": ""
                       },
                       {
-                        "fieldName": "StartTime",
-                        "parameterName": "paramFiredDateTime",
+                        "fieldName": "templateId",
+                        "parameterName": "param_templateId",
                         "parameterType": 1
                       }
                     ],
@@ -828,6 +824,10 @@
                           }
                         },
                         {
+                          "columnMatch": "templateId",
+                          "formatter": 5
+                        },
+                        {
                           "columnMatch": "MonitorCondition",
                           "formatter": 18,
                           "formatOptions": {
@@ -857,10 +857,6 @@
                         {
                           "columnMatch": "Description",
                           "formatter": 1
-                        },
-                        {
-                          "columnMatch": "AlertRule",
-                          "formatter": 5
                         },
                         {
                           "columnMatch": "pInstance",
@@ -898,7 +894,6 @@
               ],
               "exportParameters": true
             },
-            "customWidth": "0",
             "conditionalVisibility": {
               "parameterName": "selSID",
               "comparison": "isNotEqualTo"
@@ -1449,6 +1444,103 @@
               }
             ],
             "name": "availability"
+          },
+          {
+            "type": 12,
+            "content": {
+              "version": "NotebookGroup/1.0",
+              "groupType": "editable",
+              "items": [
+                {
+                  "type": 12,
+                  "content": {
+                    "version": "NotebookGroup/1.0",
+                    "groupType": "editable",
+                    "title": "Summary view",
+                    "items": [
+                      {
+                        "type": 1,
+                        "content": {
+                          "json": "Average response time for all issue types"
+                        },
+                        "name": "noIssueTypeSubTitle"
+                      },
+                      {
+                        "type": 3,
+                        "content": {
+                          "version": "KqlItem/1.0",
+                          "query": "let endTime=todatetime(\"{endTime}\");\r\nlet startTime=todatetime(\"{startTime}\");\r\nlet binSize=tolong(\"{minutesBin}\");\r\n\r\nSapNetweaver_SWNC_CL \r\n| where TimeGenerated between (startTime .. endTime) and SID_s==\"{selSID}\" and \"{providerInstance}\" contains PROVIDER_INSTANCE_s\r\n| summarize ResponseTime = avg(ST03_Avg_Resp_Time_d) by bin(TimeGenerated, iff(binSize<60, 1m, binSize*1m))\r\n| sort by ResponseTime desc",
+                          "size": 0,
+                          "aggregation": 3,
+                          "title": "Response time (ms) for Issue type = High Response Time",
+                          "queryType": 0,
+                          "resourceType": "microsoft.operationalinsights/workspaces",
+                          "crossComponentResources": [
+                            "{workspace}"
+                          ],
+                          "visualization": "timechart",
+                          "chartSettings": {
+                            "ySettings": {
+                              "numberFormatSettings": {
+                                "unit": 23,
+                                "options": {
+                                  "style": "decimal",
+                                  "useGrouping": true,
+                                  "maximumSignificantDigits": 1
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "customWidth": "50",
+                        "name": "is01overview"
+                      },
+                      {
+                        "type": 3,
+                        "content": {
+                          "version": "KqlItem/1.0",
+                          "query": "let endTime=todatetime(\"{endTime}\");\r\nlet startTime=todatetime(\"{startTime}\");\r\nlet binSize=tolong(\"{minutesBin}\");\r\n\r\nSapNetweaver_SWNC_CL \r\n| where TimeGenerated between (startTime .. endTime) and SID_s==\"{selSID}\" and \"{providerInstance}\" contains PROVIDER_INSTANCE_s\r\n| where Task_Type_Name_s==\"BCKGRD\"\r\n| summarize ResponseTime = avg(ST03_Avg_Resp_Time_d) by bin(TimeGenerated, iff(binSize<60, 1m, binSize*1m))\r\n| sort by ResponseTime desc",
+                          "size": 0,
+                          "aggregation": 3,
+                          "title": "Response time (ms) for Issue type = Long Batch Jobs",
+                          "queryType": 0,
+                          "resourceType": "microsoft.operationalinsights/workspaces",
+                          "crossComponentResources": [
+                            "{workspace}"
+                          ],
+                          "visualization": "timechart",
+                          "chartSettings": {
+                            "ySettings": {
+                              "numberFormatSettings": {
+                                "unit": 23,
+                                "options": {
+                                  "style": "decimal",
+                                  "useGrouping": true,
+                                  "maximumSignificantDigits": 1
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "customWidth": "50",
+                        "name": "is02overview"
+                      }
+                    ]
+                  },
+                  "conditionalVisibility": {
+                    "parameterName": "param_templateId",
+                    "comparison": "isEqualTo"
+                  },
+                  "name": "noIssueType"
+                }
+              ]
+            },
+            "conditionalVisibility": {
+              "parameterName": "selTab",
+              "comparison": "isEqualTo",
+              "value": "Performance"
+            },
+            "name": "performance"
           }
         ]
       },
