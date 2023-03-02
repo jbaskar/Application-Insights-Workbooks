@@ -160,7 +160,8 @@
                   },
                   "defaultValue": "value::1",
                   "queryType": 0,
-                  "resourceType": "microsoft.operationalinsights/workspaces"
+                  "resourceType": "microsoft.operationalinsights/workspaces",
+                  "value": "true"
                 }
               ],
               "style": "pills",
@@ -398,9 +399,6 @@
             "type": 9,
             "content": {
               "version": "KqlParameterItem/1.0",
-              "crossComponentResources": [
-                "/subscriptions/ade68fe0-eb3e-4178-ab09-c5f06f7fb575/resourceGroups/AIOpsWorkloads-TS1/providers/Microsoft.Workloads/monitors/ams-N04"
-              ],
               "parameters": [
                 {
                   "id": "4f064bf8-9dff-419f-b20a-15d36ba50479",
@@ -450,7 +448,7 @@
               "style": "pills",
               "doNotRunWhenHidden": true,
               "queryType": 0,
-              "resourceType": "microsoft.operationalinsights/workspaces"
+              "resourceType": "microsoft.workloads/monitors"
             },
             "conditionalVisibilities": [
               {
@@ -805,6 +803,56 @@
                           "formatter": 5
                         },
                         {
+                          "columnMatch": "Insights",
+                          "formatter": 1,
+                          "formatOptions": {
+                            "linkTarget": "WorkbookTemplate",
+                            "linkIsContextBlade": true,
+                            "workbookContext": {
+                              "componentIdSource": "workbook",
+                              "resourceIdsSource": "workbook",
+                              "templateIdSource": "static",
+                              "templateId": "Community-Workbooks/SapMonitor2.0/AIOpsInsights/Performance Insights",
+                              "typeSource": "workbook",
+                              "gallerySource": "workbook",
+                              "locationSource": "workbook",
+                              "passSpecificParams": true,
+                              "templateParameters": [
+                                {
+                                  "name": "AlertFired",
+                                  "source": "column",
+                                  "value": "StartTime"
+                                },
+                                {
+                                  "name": "AlertTemplate",
+                                  "source": "column",
+                                  "value": "templateId"
+                                },
+                                {
+                                  "name": "AlertName",
+                                  "source": "column",
+                                  "value": "Name"
+                                },
+                                {
+                                  "name": "SID",
+                                  "source": "parameter",
+                                  "value": "selSID"
+                                },
+                                {
+                                  "name": "Provider",
+                                  "source": "parameter",
+                                  "value": "providerInstance"
+                                },
+                                {
+                                  "name": "TimeRange",
+                                  "source": "parameter",
+                                  "value": "timePeriod"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
                           "columnMatch": "AlertInfo",
                           "formatter": 1,
                           "formatOptions": {
@@ -886,10 +934,236 @@
                       "parameterName": "alertsOptsData",
                       "comparison": "isNotEqualTo",
                       "value": "[]"
+                    },
+                    {
+                      "parameterName": "selTab",
+                      "comparison": "isEqualTo",
+                      "value": "Availability"
                     }
                   ],
                   "showPin": false,
-                  "name": "firedAlerts"
+                  "name": "firedAlertsAvail"
+                },
+                {
+                  "type": 3,
+                  "content": {
+                    "version": "KqlItem/1.0",
+                    "query": "AlertsManagementResources\r\n| where type =~ 'microsoft.alertsmanagement/alerts'\r\n| extend StartTime = todatetime(properties.essentials.startDateTime)\r\n| where StartTime between (todatetime(\"{timePeriod:startISO}\") .. todatetime(\"{timePeriod:endISO}\"))\r\n| extend State=tostring(properties.essentials.alertState)\r\n| extend AlertRule=tolower(tostring(properties.essentials.alertRule))\r\n| extend Severity=tostring(properties.essentials.severity)\r\n| extend MonitorCondition=tostring(properties.essentials.monitorCondition)\r\n| where \"{alertSeverity}\" contains Severity and \"{alertState}\" contains State\r\n| join kind=inner (Resources \r\n    | where type =~ 'microsoft.insights/scheduledQueryRules'\r\n    | extend workspace = tostring(properties.scopes[0])\r\n\t| extend pInstance=tags.['profile-id'], templateId=tags.['alert-template-id']\r\n    | where workspace =~ '{workspace}' and ((\"{selTab}\"==\"Availability\" and \"{availabilityAlertTemplates}\" contains templateId) or (\"{selTab}\"!=\"Availability\" and \"{performanceAlertTemplates}\" contains templateId)) and (\"{providerInstance}\") contains pInstance \r\n    | project AlertRule=tolower(id), Description=properties.description, pInstance, templateId) on AlertRule\r\n| order by Severity asc, State, StartTime\r\n| project StartTime, Name=name, Severity, State, id, Insights=\"View\", AlertInfo=\"Alert Details\", templateId",
+                    "size": 0,
+                    "noDataMessage": "No alerts found in this time range or no alert rules have been configured for this monitoring profile.",
+                    "exportedParameters": [
+                      {
+                        "fieldName": "StartTime",
+                        "parameterName": "param_firedTime",
+                        "defaultValue": ""
+                      },
+                      {
+                        "fieldName": "templateId",
+                        "parameterName": "param_templateId",
+                        "parameterType": 1
+                      }
+                    ],
+                    "queryType": 1,
+                    "resourceType": "microsoft.resourcegraph/resources",
+                    "crossComponentResources": [
+                      "{workspace}"
+                    ],
+                    "gridSettings": {
+                      "formatters": [
+                        {
+                          "columnMatch": "StartTime",
+                          "formatter": 6,
+                          "dateFormat": {
+                            "showUtcTime": null,
+                            "formatName": "shortDateTimePattern"
+                          }
+                        },
+                        {
+                          "columnMatch": "Name",
+                          "formatter": 1,
+                          "formatOptions": {
+                            "workbookContext": {
+                              "componentIdSource": "workbook",
+                              "resourceIdsSource": "workbook",
+                              "templateIdSource": "parameter",
+                              "templateId": "sapInsightsWB",
+                              "typeSource": "workbook",
+                              "gallerySource": "workbook",
+                              "locationSource": "workbook",
+                              "passSpecificParams": true,
+                              "templateParameters": [
+                                {
+                                  "name": "timePeriod",
+                                  "source": "column",
+                                  "value": "StartTime"
+                                }
+                              ]
+                            },
+                            "bladeOpenContext": {
+                              "bladeName": "AlertDetailsTemplateBlade",
+                              "extensionName": "Microsoft_Azure_Monitoring",
+                              "bladeParameters": [
+                                {
+                                  "name": "alertId",
+                                  "source": "column",
+                                  "value": "id"
+                                }
+                              ]
+                            }
+                          },
+                          "tooltipFormat": {
+                            "tooltip": "Click on this to filter insights specific to this alert."
+                          }
+                        },
+                        {
+                          "columnMatch": "Severity",
+                          "formatter": 11
+                        },
+                        {
+                          "columnMatch": "id",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "Insights",
+                          "formatter": 1,
+                          "formatOptions": {
+                            "linkTarget": "WorkbookTemplate",
+                            "linkIsContextBlade": true,
+                            "workbookContext": {
+                              "componentIdSource": "workbook",
+                              "resourceIdsSource": "workbook",
+                              "templateIdSource": "static",
+                              "templateId": "Community-Workbooks/SapMonitor2.0/AIOpsInsights/Performance Insights",
+                              "typeSource": "workbook",
+                              "gallerySource": "workbook",
+                              "locationSource": "workbook",
+                              "passSpecificParams": true,
+                              "templateParameters": [
+                                {
+                                  "name": "AlertFired",
+                                  "source": "column",
+                                  "value": "StartTime"
+                                },
+                                {
+                                  "name": "AlertTemplate",
+                                  "source": "column",
+                                  "value": "templateId"
+                                },
+                                {
+                                  "name": "AlertName",
+                                  "source": "column",
+                                  "value": "Name"
+                                },
+                                {
+                                  "name": "SID",
+                                  "source": "parameter",
+                                  "value": "selSID"
+                                },
+                                {
+                                  "name": "Provider",
+                                  "source": "parameter",
+                                  "value": "providerInstance"
+                                },
+                                {
+                                  "name": "TimeRange",
+                                  "source": "parameter",
+                                  "value": "timePeriod"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "AlertInfo",
+                          "formatter": 1,
+                          "formatOptions": {
+                            "linkTarget": "OpenBlade",
+                            "linkIsContextBlade": true,
+                            "bladeOpenContext": {
+                              "bladeName": "AlertDetailsTemplateBlade",
+                              "extensionName": "Microsoft_Azure_Monitoring",
+                              "bladeParameters": [
+                                {
+                                  "name": "alertId",
+                                  "source": "column",
+                                  "value": "id"
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        {
+                          "columnMatch": "templateId",
+                          "formatter": 5
+                        },
+                        {
+                          "columnMatch": "MonitorCondition",
+                          "formatter": 18,
+                          "formatOptions": {
+                            "thresholdsOptions": "icons",
+                            "thresholdsGrid": [
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Resolved",
+                                "representation": "Resolved",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "==",
+                                "thresholdValue": "Fired",
+                                "representation": "Fired",
+                                "text": "{0}{1}"
+                              },
+                              {
+                                "operator": "Default",
+                                "thresholdValue": null,
+                                "representation": "success",
+                                "text": "{0}{1}"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "columnMatch": "Description",
+                          "formatter": 1
+                        },
+                        {
+                          "columnMatch": "pInstance",
+                          "formatter": 1
+                        }
+                      ],
+                      "labelSettings": [
+                        {
+                          "columnId": "StartTime",
+                          "label": "Fired Time"
+                        },
+                        {
+                          "columnId": "AlertInfo",
+                          "label": "Action"
+                        }
+                      ]
+                    },
+                    "sortBy": []
+                  },
+                  "customWidth": "100",
+                  "conditionalVisibilities": [
+                    {
+                      "parameterName": "alertsOptsData",
+                      "comparison": "isNotEqualTo"
+                    },
+                    {
+                      "parameterName": "alertsOptsData",
+                      "comparison": "isNotEqualTo",
+                      "value": "[]"
+                    },
+                    {
+                      "parameterName": "selTab",
+                      "comparison": "isEqualTo",
+                      "value": "Performance"
+                    }
+                  ],
+                  "showPin": false,
+                  "name": "firedAlertsPerf"
                 }
               ],
               "exportParameters": true
