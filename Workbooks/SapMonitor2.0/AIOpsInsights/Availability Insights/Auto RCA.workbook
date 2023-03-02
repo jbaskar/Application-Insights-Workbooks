@@ -334,7 +334,7 @@
         "queryType": 0,
         "resourceType": "microsoft.operationalinsights/workspaces",
         "crossComponentResources": [
-          "/subscriptions/ade68fe0-eb3e-4178-ab09-c5f06f7fb575/resourceGroups/AIOpsWorkloads-TS1/providers/Microsoft.Workloads/monitors/ams-N04"
+          "{Workspace}"
         ],
         "visualization": "tiles",
         "tileSettings": {
