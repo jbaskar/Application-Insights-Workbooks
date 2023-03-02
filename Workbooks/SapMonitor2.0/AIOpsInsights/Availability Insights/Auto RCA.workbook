@@ -278,64 +278,100 @@
       "name": "passedParams"
     },
     {
-      "type": 1,
+      "type": 3,
       "content": {
-        "json": "SAP system\r\n## {SID}"
+        "version": "KqlItem/1.0",
+        "query": "datatable(Value:string, Title:string)[\r\n    \"{SID}\", \"SAP system\",\r\n    \"{VM:name}\", \"VM name\",\r\n    \"{Process}\", \"Process\",\r\n    \"{Provider:label}\", \"Providers\"\r\n]",
+        "size": 3,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "{Workspace}"
+        ],
+        "visualization": "tiles",
+        "tileSettings": {
+          "titleContent": {
+            "columnMatch": "Title",
+            "formatter": 1
+          },
+          "leftContent": {
+            "columnMatch": "Value",
+            "formatter": 1,
+            "dateFormat": {
+              "showUtcTime": null,
+              "formatName": "shortDateTimePattern"
+            }
+          },
+          "showBorder": false
+        }
       },
-      "conditionalVisibility": {
-        "parameterName": "SID",
-        "comparison": "isNotEqualTo"
-      },
-      "customWidth": "20",
-      "name": "selectionDetails"
+      "conditionalVisibilities": [
+        {
+          "parameterName": "SID",
+          "comparison": "isNotEqualTo"
+        },
+        {
+          "parameterName": "Process",
+          "comparison": "isNotEqualTo"
+        },
+        {
+          "parameterName": "Provider",
+          "comparison": "isNotEqualTo"
+        },
+        {
+          "parameterName": "Service",
+          "comparison": "isEqualTo"
+        }
+      ],
+      "name": "selectedInsightParams"
     },
     {
-      "type": 1,
+      "type": 3,
       "content": {
-        "json": "VM name\r\n## {VM:name}"
+        "version": "KqlItem/1.0",
+        "query": "datatable(Value:string, Title:string)[\r\n    \"{SID}\", \"SAP system\",\r\n    \"{VM:name}\", \"VM name\",\r\n    \"{Process}\", \"Process\",\r\n    \"{Service}\", \"Service\",\r\n    \"{Provider:label}\", \"Providers\"\r\n]",
+        "size": 3,
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "/subscriptions/ade68fe0-eb3e-4178-ab09-c5f06f7fb575/resourceGroups/AIOpsWorkloads-TS1/providers/Microsoft.Workloads/monitors/ams-N04"
+        ],
+        "visualization": "tiles",
+        "tileSettings": {
+          "titleContent": {
+            "columnMatch": "Title",
+            "formatter": 1
+          },
+          "leftContent": {
+            "columnMatch": "Value",
+            "formatter": 1,
+            "dateFormat": {
+              "showUtcTime": null,
+              "formatName": "shortDateTimePattern"
+            }
+          },
+          "showBorder": false
+        }
       },
-      "conditionalVisibility": {
-        "parameterName": "VM",
-        "comparison": "isNotEqualTo"
-      },
-      "customWidth": "20",
-      "name": "vmDetails"
-    },
-    {
-      "type": 1,
-      "content": {
-        "json": "Process\r\n## {Process}"
-      },
-      "conditionalVisibility": {
-        "parameterName": "Process",
-        "comparison": "isNotEqualTo"
-      },
-      "customWidth": "20",
-      "name": "processDetails"
-    },
-    {
-      "type": 1,
-      "content": {
-        "json": "Service\r\n## {Service}"
-      },
-      "conditionalVisibility": {
-        "parameterName": "Service",
-        "comparison": "isNotEqualTo"
-      },
-      "customWidth": "20",
-      "name": "serviceDetails"
-    },
-    {
-      "type": 1,
-      "content": {
-        "json": "Providers\r\n## {Provider:label}"
-      },
-      "conditionalVisibility": {
-        "parameterName": "Provider",
-        "comparison": "isNotEqualTo"
-      },
-      "customWidth": "20",
-      "name": "providerDetails"
+      "conditionalVisibilities": [
+        {
+          "parameterName": "SID",
+          "comparison": "isNotEqualTo"
+        },
+        {
+          "parameterName": "Process",
+          "comparison": "isNotEqualTo"
+        },
+        {
+          "parameterName": "Provider",
+          "comparison": "isNotEqualTo"
+        },
+        {
+          "parameterName": "Service",
+          "comparison": "isNotEqualTo"
+        }
+      ],
+      "name": "selectedInsightParamsWService"
     },
     {
       "type": 3,
@@ -351,9 +387,6 @@
         "visualization": "tiles",
         "tileSettings": {
           "titleContent": {
-            "formatter": 1
-          },
-          "subtitleContent": {
             "columnMatch": "Range",
             "formatter": 1
           },
@@ -1029,9 +1062,6 @@
                       "{VM}"
                     ],
                     "timeContextFromParameter": "TimeRange",
-                    "timeContext": {
-                      "durationMs": 604800000
-                    },
                     "metrics": [
                       {
                         "namespace": "microsoft.compute/virtualmachines",
