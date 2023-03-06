@@ -337,7 +337,7 @@
             "timeContext": {
               "durationMs": 86400000
             },
-            "value": "Config"
+            "value": "Summary"
           }
         ],
         "style": "pills",
